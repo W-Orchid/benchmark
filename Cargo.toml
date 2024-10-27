@@ -4,3 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+womscp-lib = { git = "https://github.com/W-Orchid/womscp-lib.git" }

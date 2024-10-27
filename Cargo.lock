@@ -5,3 +5,11 @@ version = 3
 [[package]]
 name = "womscp-benchmark"
 version = "0.1.0"
+dependencies = [
+ "womscp-lib",
+]
+
+[[package]]
+name = "womscp-lib"
+version = "0.1.0"
+source = "git+https://github.com/W-Orchid/womscp-lib.git#6058e99b7d06beb692b0813009290093fd25a956"
