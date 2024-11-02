@@ -41,6 +41,8 @@ pub fn dispatcher
             let stream = TcpStream::connect(&cli.address).await;
 
             if stream.is_err() {
+                eprintln!("TCP error: {:#?}", stream.unwrap_err());
+
                 let benchmark = results::RequestBenchmark {
                     id: i,
                     elapsed: timer.elapsed(),
@@ -48,7 +50,7 @@ pub fn dispatcher
                     response: Err(ResponseError::Tcp)
                 };
 
-                let _ = local_sendr.send(benchmark).await;
+                local_sendr.send(benchmark).await.unwrap();
                 return;
             }
 
@@ -74,12 +76,18 @@ pub fn dispatcher
 pub async fn send_request
 (stream :&mut TcpStream, request :&Request) -> Result<(), ResponseError> 
 {
-    let req_buf :[u8; WOMSCP_REQ_LEN] = request.try_into().unwrap();
+    let req_buf :[u8; WOMSCP_REQ_LEN] = request.try_into()?;
 
-    stream.write_all(&req_buf).await.unwrap();
+    if let Err(e) = stream.write_all(&req_buf).await {
+        eprintln!("TCP write error: {}", e);
+        return Err(ResponseError::Tcp);
+    }
 
     let mut res :[u8; 1] = [0];
-    stream.read(&mut res).await.unwrap();
+    if let Err(e) = stream.read(&mut res).await {
+        eprintln!("TCP write error: {}", e);
+        return Err(ResponseError::Tcp);
+    };
 
     match res {
         [0] => Ok(()),
