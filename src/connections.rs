@@ -11,8 +11,8 @@ use super::*;
 pub fn dispatcher
 (cli_ptr :Arc<init::Cli>, sendr :Sender<results::RequestBenchmark>) 
 {
-    let failure_point = cli_ptr.number * 
-        (cli_ptr.failure / 100) as u32;
+    let failure_point = (cli_ptr.number as f32) * 
+        (cli_ptr.failure as f32 / 100.0);
 
     let cli_loop_ptr :Arc<init::Cli> = Arc::clone(&cli_ptr);
 
@@ -22,7 +22,7 @@ pub fn dispatcher
         let local_sendr = sendr.clone();
 
         let req = Request {
-            version: if i < failure_point {
+            version: if (i as f32) < failure_point {
                 0
             } else {
                 WOMSCP_VERSION

@@ -17,7 +17,7 @@ async fn main() {
         :(Sender<results::RequestBenchmark>, Receiver<results::RequestBenchmark>) 
           = channel(32);
 
-    let mut results = results::Results::new(cli.number);
+    let mut results = results::Results::new(cli.number, cli.failure);
 
     let cli_ptr = Arc::from(cli);
     let local_cli_ptr = Arc::clone(&cli_ptr);
@@ -36,5 +36,5 @@ async fn main() {
         results.update(benchmark);
     }
 
-    todo!("print results");
+    println!("{}", results);
 }

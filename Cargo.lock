@@ -478,7 +478,7 @@ dependencies = [
 [[package]]
 name = "womscp-lib"
 version = "0.1.0"
-source = "git+https://github.com/W-Orchid/womscp-lib.git#00d87b72526b8ac1eddeb54492faf39811f96bf9"
+source = "git+https://github.com/W-Orchid/womscp-lib.git#04bf791768c7d61fb0d663ec999b9ff9432d9811"
 dependencies = [
  "tokio",
 ]
