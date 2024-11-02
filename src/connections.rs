@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpStream};
 use tokio::sync::mpsc::Sender;
 
@@ -5,11 +7,13 @@ use womscp_lib::womscp::{Request, RequestFlags, ResponseError, WOMSCP_REQ_LEN, W
 
 use super::*;
 
+
 pub fn dispatcher
-(cli :init::Cli, sendr :Sender<Result<(), ResponseError>>) 
+(cli_ptr :Arc<init::Cli>, sendr :Sender<results::RequestBenchmark>) 
 {
-    let failure_point = cli.number * (cli.failure / 100) as u32;
-    let cli_ptr :Arc<init::Cli> = Arc::from(cli);
+    let failure_point = cli_ptr.number * 
+        (cli_ptr.failure / 100) as u32;
+
     let cli_loop_ptr :Arc<init::Cli> = Arc::clone(&cli_ptr);
 
 
@@ -17,23 +21,50 @@ pub fn dispatcher
         let local_ptr :Arc<init::Cli> = Arc::clone(&cli_ptr);
         let local_sendr = sendr.clone();
 
+        let req = Request {
+            version: if i < failure_point {
+                0
+            } else {
+                WOMSCP_VERSION
+            },
+            m_id: 0,
+            s_id: 0,
+            sensor_type: 1,
+            data: 123,
+            flags: RequestFlags::Dummy as u8
+        };
+
+        let timer = Instant::now();
+
         tokio::spawn(async move {
             let cli = local_ptr.deref();
             let stream = TcpStream::connect(&cli.address).await;
 
             if stream.is_err() {
-                let _ = local_sendr.send(Err(ResponseError::Tcp)).await;
+                let benchmark = results::RequestBenchmark {
+                    id: i,
+                    elapsed: timer.elapsed(),
+                    request: req,
+                    response: Err(ResponseError::Tcp)
+                };
+
+                let _ = local_sendr.send(benchmark).await;
                 return;
             }
 
             let res = connections::send_request(
-                i,
                 &mut stream.unwrap(), 
-                i < failure_point,
-                cli.verbose
+                &req
                 ).await;
 
-            local_sendr.send(res).await.unwrap();
+            let benchmark = results::RequestBenchmark {
+                id: i,
+                elapsed: timer.elapsed(),
+                request: req,
+                response: res
+            };
+
+            local_sendr.send(benchmark).await.unwrap();
         });
     }
 
@@ -41,35 +72,14 @@ pub fn dispatcher
 }
 
 pub async fn send_request
-(request_id :u32, stream :&mut TcpStream, failure :bool, verbose :bool) -> Result<(), ResponseError> 
+(stream :&mut TcpStream, request :&Request) -> Result<(), ResponseError> 
 {
-    let req = Request {
-        version: if failure {
-            0
-        } else { 
-            WOMSCP_VERSION 
-        },
-        m_id: 0,
-        s_id: 0,
-        sensor_type: 1,
-        data: 0,
-        flags: RequestFlags::Dummy as u8
-    };
-
-    if verbose {
-        println!("---REQUEST #{}---\n{:#?}", request_id, req);
-    }
-
-    let req_buf :[u8; WOMSCP_REQ_LEN] = req.try_into().unwrap();
+    let req_buf :[u8; WOMSCP_REQ_LEN] = request.try_into().unwrap();
 
     stream.write_all(&req_buf).await.unwrap();
 
     let mut res :[u8; 1] = [0];
     stream.read(&mut res).await.unwrap();
-
-    if verbose {
-        println!("---RESPONSE #{}---\n{:#?}", request_id, res);
-    }
 
     match res {
         [0] => Ok(()),

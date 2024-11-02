@@ -6,28 +6,35 @@ use womscp_lib::womscp::ResponseError;
 
 mod init;
 mod connections;
+mod results;
 
 
 #[tokio::main]
 async fn main() {
     let cli = init::Cli::parse();
 
-    type ChannelType = Result<(), ResponseError>;
-
     let (sendr, mut recvr) 
-        :(Sender<ChannelType>, Receiver<ChannelType>) 
+        :(Sender<results::RequestBenchmark>, Receiver<results::RequestBenchmark>) 
           = channel(32);
 
-    connections::dispatcher(cli, sendr);
+    let mut results = results::Results::new(cli.number);
 
-    while let Some(res) = recvr.recv().await {
-        match res {
-            Ok(inner) => { dbg!(inner); },
-            Err(e) => { dbg!(e); }
-        };
+    let cli_ptr = Arc::from(cli);
+    let local_cli_ptr = Arc::clone(&cli_ptr);
 
-        todo!("implements some saving of results");
+    connections::dispatcher(cli_ptr, sendr);
+
+    while let Some(benchmark) = recvr.recv().await {
+        if local_cli_ptr.verbose {
+            println!("---Benchmark #{}---", benchmark.id);
+            println!("Request: {:#?}", benchmark.request);
+            println!("Response: {:#?}", benchmark.response);
+            println!("Elapsed: {:#?}", benchmark.elapsed);
+            println!("-------------------");
+        }
+
+        results.update(benchmark);
     }
 
-
+    todo!("print results");
 }
