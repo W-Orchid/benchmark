@@ -1,0 +1,24 @@
+#+title: WOMSCP Benchmark
+
+This program is designed to benchmark the
+
+* Requirements
+An initialized, running instance of [[https://github.com/W-Orchid/womscp-server][WOMSCP Server]]. It should be configured to use the default values for *microcontroller_count* (= 1) and *sensors_per_microcontroller* (= 2).
+
+The server listening should be listening to the same address as the benchmarking program is streaming to.
+
+* Usage
+Build:
+#+begin_src shell
+  cargo build --release
+#+end_src
+
+Run:
+#+begin_src shell
+  ./target/release/womscp-benchmark
+#+end_src
+
+To see the available options for the benchmark:
+#+begin_src shell
+  ./target/release/womscp-benchmark --help
+#+end_src
