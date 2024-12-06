@@ -2,6 +2,7 @@ use std::{ops::Deref, sync::Arc};
 
 use clap::Parser;
 use tokio::sync::mpsc::{channel, Sender, Receiver};
+use tokio::time::Instant;
 use womscp_lib::womscp::ResponseError;
 
 mod init;
@@ -26,6 +27,7 @@ async fn main() {
     let cli_ptr = Arc::from(cli);
     let local_cli_ptr = Arc::clone(&cli_ptr);
 
+    let timer = Instant::now();
     tokio::task::spawn(connections::dispatcher(cli_ptr, sendr));
 
     let mut requests_handled = 0;
@@ -47,5 +49,6 @@ async fn main() {
         }
     }
 
+    results.total_response_time = timer.elapsed();
     println!("{}", results);
 }
