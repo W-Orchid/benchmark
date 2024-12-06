@@ -1,4 +1,4 @@
-use std::time::Instant;
+use tokio::time::Instant;
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpStream};
 use tokio::sync::mpsc::Sender;

@@ -15,10 +15,11 @@ pub struct RequestBenchmark {
 }
 
 pub struct Results {
-    pub min_response_time :Duration,
-    pub max_response_time :Duration,
-    pub avg_response_time :Duration,
-    total_response_times  :Duration,
+    pub total_response_time: Duration,
+    pub min_response_time  :Duration,
+    pub max_response_time  :Duration,
+    pub avg_response_time  :Duration,
+    total_response_times   :Duration,
 
     user_defined_failure_rate :u8,
 
@@ -35,8 +36,9 @@ pub struct Results {
 impl Results {
     pub fn new(total_requests_made :u32, concurrent_req :u16, failure_rate :u8) -> Self {
         Results {
-            min_response_time: Duration::from_nanos(100),
-            max_response_time: Duration::from_secs(0),
+            total_response_time: Duration::from_nanos(0),
+            min_response_time: Duration::from_nanos(Duration::MAX.as_nanos() as u64),
+            max_response_time: Duration::from_nanos(0),
             avg_response_time: Duration::from_nanos(0),
             total_response_times: Duration::from_nanos(0),
 
@@ -88,9 +90,10 @@ impl Display for Results {
         Database Errors                = {:>15}
 
 
-    Min. Response Time                 = {:>15} ns
-    Max. Response Time                 = {:>15} ns
-    Avg. Response Time                 = {:>15} ns
+    Total Response Time                = {:>15} ms
+        Min. Response Time             = {:>15} ms
+        Max. Response Time             = {:>15} ms
+        Avg. Response Time             = {:>15} ms
 
  *************************",
     self.total_responses,
@@ -102,9 +105,10 @@ impl Display for Results {
     self.unrecognized_errors,
     self.tcp_errors,
     self.database_errors,
-    self.min_response_time.as_nanos(),
-    self.max_response_time.as_nanos(),
-    self.avg_response_time.as_nanos()
+    self.total_response_time.as_millis(),
+    self.min_response_time.as_millis(),
+    self.max_response_time.as_millis(),
+    self.avg_response_time.as_millis()
 )
     }
 }
