@@ -11,18 +11,24 @@ mod results;
 
 #[tokio::main]
 async fn main() {
-    let cli = init::Cli::parse();
+    let mut cli = init::Cli::parse();
+
+    if cli.number < (cli.concurrent as u32) {
+        cli.concurrent = cli.number as u16;
+    }
 
     let (sendr, mut recvr) 
         :(Sender<results::RequestBenchmark>, Receiver<results::RequestBenchmark>) 
-          = channel(32);
+          = channel(cli.concurrent as usize);
 
-    let mut results = results::Results::new(cli.number, cli.failure);
+    let mut results = results::Results::new(cli.number, cli.concurrent, cli.failure);
 
     let cli_ptr = Arc::from(cli);
     let local_cli_ptr = Arc::clone(&cli_ptr);
 
-    connections::dispatcher(cli_ptr, sendr);
+    tokio::task::spawn(connections::dispatcher(cli_ptr, sendr));
+
+    let mut requests_handled = 0;
 
     while let Some(benchmark) = recvr.recv().await {
         if local_cli_ptr.verbose {
@@ -34,6 +40,11 @@ async fn main() {
         }
 
         results.update(benchmark);
+        requests_handled += 1;
+
+        if requests_handled == local_cli_ptr.number {
+            break;
+        }
     }
 
     println!("{}", results);

@@ -7,8 +7,12 @@ use clap::Parser;
 #[command(about = "Runs a benchmark on the server that handles the WOMSCP.", long_about = None)]
 pub struct Cli {
     /// Number of requests to make
-    #[arg(short, long, default_value_t = 100_000)]
+    #[arg(short, long, default_value_t = 10_000)]
     pub number :u32,
+
+    /// Number of concurernt requests
+    #[arg(short, long, default_value_t = 100)]
+    pub concurrent :u16,
 
     /// Address to send to
     #[arg(short, long, default_value_t = String::from("127.0.0.1:3000"))]

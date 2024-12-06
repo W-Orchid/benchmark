@@ -28,11 +28,12 @@ pub struct Results {
     pub unrecognized_errors :u32,
     pub tcp_errors :u32,
     pub database_errors :u32,
-    total_responses :u32
+    total_responses :u32,
+    concurrent_requests :u16
 }
 
 impl Results {
-    pub fn new(total_requests_made :u32, failure_rate :u8) -> Self {
+    pub fn new(total_requests_made :u32, concurrent_req :u16, failure_rate :u8) -> Self {
         Results {
             min_response_time: Duration::from_nanos(100),
             max_response_time: Duration::from_secs(0),
@@ -47,7 +48,8 @@ impl Results {
             unrecognized_errors: 0,
             tcp_errors: 0,
             database_errors: 0,
-            total_responses: total_requests_made
+            total_responses: total_requests_made,
+            concurrent_requests: concurrent_req
         }
     }
 
@@ -76,6 +78,7 @@ impl Display for Results {
         write!(f, 
             " *** BENCHMARK RESULTS *** 
     Total Requests                     = {:>15}
+    Concurrent Requests                = {:>15}
     User-Defined Failure Rate          = {:>15} %
     Actual Failure Rate                = {:>15} %
         Server Not Ready Errors        = {:>15}
@@ -91,6 +94,7 @@ impl Display for Results {
 
  *************************",
     self.total_responses,
+    self.concurrent_requests,
     self.user_defined_failure_rate as f32,
     (self.total_responses - self.ok_responses) as f32 / self.total_responses as f32 * 100.0,
     self.not_ready_errors,
